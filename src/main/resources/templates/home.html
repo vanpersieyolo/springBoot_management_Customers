@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>List</h1>
+<br>
+<h2>Create Customer</h2>
+<form>
+    <table border="1px" cellpadding="5px">
+        <tr>
+            <td>Name</td>
+            <td>
+                <input type="text" id="name">
+            </td>
+        </tr>
+        <tr>
+            <td>Age</td>
+            <td>
+                <input type="number" id="age">
+            </td>
+        </tr>
+        <tr>
+            <td>Province</td>
+            <td>
+                <select id="province">
+                    <th:block th:each="p: ${provinces}">
+                        <option th:value="${p.id}" th:text="${p.name}"></option>
+                    </th:block>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input type="submit" value="Create" onclick="addCustomer()">
+            </td>
+        </tr>
+    </table>
+    <br>
+    <form >
+        <h3>tìm kiếm</h3>
+        <input type="text" id="nameSearch" placeholder="input name" onkeyup="searchCus()" >
+        <input type="submit"  value="show all" >
+    </form>
+    <br>
+    <h2>List Customer</h2>
+    <table border="1px">
+        <tr>
+            <td>Id</td>
+            <td>Name</td>
+            <td>Age</td>
+            <td>Province</td>
+        </tr>
+        <tr>
+            <tbody id="list">
+
+            </tbody>
+        </tr>
+    </table>
+</form>
+</body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript">
+    function addCustomer(){
+        let nameCus = $('#name').val();
+        let ageCus = $('#age').val();
+        let  provinceID = $("#province").val();
+        let newCustomer = {
+            name: nameCus,
+            age: ageCus,
+            province: {
+                id: provinceID,
+            }
+        }
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            url:"home/create",
+            type: "POST",
+            data: JSON.stringify(newCustomer),
+            success: function (){
+                showList("home/data")
+            }
+        })
+        event.preventDefault();
+    }
+    function showList(url){
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (ctm){
+                let content = "";
+                for (let i = 0; i < ctm.length; i++) {
+                    content +=`<tr id="i"+${i}>
+                <td>${ctm[i].id}</td>
+                <td>${ctm[i].name}</td>
+                <td>${ctm[i].age}</td>
+                <td>${ctm[i].province.name}</td>
+                <td><a class="deleteClass" href="javascript:;" onclick="remove(${ctm[i].id},event)">Delete</a></td>
+                <td><a class="editClass" th:href="/home/edit/${ctm[i].id}">Edit</a></td>
+            </tr>`
+                }
+                $('#list').html(content);
+            }
+        })
+    }
+    function remove(id,event){
+        $.ajax({
+            url: "home/delete/"+ id,
+            type: "DELETE",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            success: function (response) {
+                var rowToDelete = $(event.target).closest("tr");
+                rowToDelete.remove();
+            }
+        });
+    }
+    function searchCus(){
+        let name = $("#nameSearch").val();
+        $.ajax({
+            url: "home/search/"+name,
+            type: "GET",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            success: function () {
+                showList("home/search/"+name);
+            }
+        })
+        event.preventDefault();
+    }
+    showList("home/data");
+</script>
+</html>
